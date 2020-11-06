@@ -6,14 +6,14 @@ mod config {
     use serde::Deserialize;
 
     #[derive(Deserialize)]
-    pub struct Configs {
+    pub struct Config {
         pub webhook_url: String,
         pub other_config: String,
     }
 
-    impl Configs {
+    impl Config {
         pub fn from_env() -> Result<Self, ConfigError> {
-            let mut cfg = ::config::Configs::new();
+            let mut cfg = ::config::Config::new();
             cfg.merge(::config::Environment::new())?;
             cfg.try_into()
         }
@@ -44,14 +44,13 @@ mod req_macros {
     use tokio;
     use pretty_env_logger;
 
-    fn find_variant(keywd: String) -> Result<(), std::error::Error> {
-        pretty_env_logger::init();
+    async fn find_variant(keywd: String) -> Result<&'static String, dyn std::error::Error> {
 
          // building client and request (has to use tls otherwise 304 status)
         let https = HttpsConnector::new();
         let client = Client::builder().build::<_, hyper::Body>(https);
-        let webhookurl = env::var("webhookurl").unwrap().as_str().parse()?;
-        let mobile_endpoint: hyper::Uri = "https://www.supremenewyork.com/mobile_stock.json".parse()?; 
+        let webhookurl = std::env::var("webhookurl").unwrap().as_str().parse()?;
+        let mobile_endpoint: hyper::Uri = "https://www.supremenewyork.com/mobile_stock.json".parse::<Uri>().unwrap(); 
 
         let resp = client
             .get(mobile_endpoint.clone())
@@ -68,9 +67,8 @@ mod req_macros {
         for (key, _value) in v["products_and_categories"].as_object().unwrap() {
             println!("{}", key);
             for value in v["products_and_categories"][key].as_array().unwrap(){
-                if value["name"].as_str().unwrap().contains(keywd) {
-                    Ok(value["name"].as_str().unwrap())
-                    info!("Keyword Hit!");
+                if value["name"].as_str().unwrap().contains(&keywd) {
+                    Ok(value["id"].as_str().unwrap());
                 }
             }
         }
