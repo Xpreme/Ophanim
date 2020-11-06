@@ -42,9 +42,10 @@ mod req_macros {
     };
     use hyper_tls::HttpsConnector;
     use tokio;
+    use pretty_env_logger;
 
     fn find_variant(keywd: String) -> Result<(), std::error::Error> {
-        dotenv().ok();
+        pretty_env_logger::init();
 
          // building client and request (has to use tls otherwise 304 status)
         let https = HttpsConnector::new();
@@ -69,12 +70,13 @@ mod req_macros {
             for value in v["products_and_categories"][key].as_array().unwrap(){
                 if value["name"].as_str().unwrap().contains(keywd) {
                     Ok(value["name"].as_str().unwrap())
+                    info!("Keyword Hit!");
                 }
             }
         }
-
     }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// 
+//
+
